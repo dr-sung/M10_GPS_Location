@@ -1,6 +1,7 @@
 package edu.uco.hsung.m10_gps_location;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -9,8 +10,8 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,11 +33,7 @@ public class MainActivity extends Activity {
     // Reference to the LocationManager and LocationListener
     private LocationManager locationManager;
     private LocationListener locationListener;
-
-    private boolean firstUpdate = true;
-
-    private String TAG = "M10_GPS_LOCATION";
-
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +48,6 @@ public class MainActivity extends Activity {
         viewAccuracy.setText(R.string.no_intial_reading);
 
         locationListener = new LocationListener() {
-
             @Override
             public void onLocationChanged(Location location) {
                 updateDisplay(location);
@@ -69,19 +65,6 @@ public class MainActivity extends Activity {
             public void onProviderDisabled(String provider) {
             }
         };
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // Acquire reference to the LocationManager
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (locationListener == null) {
-            viewAccuracy.setText("No GPS is available");
-            return;
-            // finish(); <-- to close the app (no error message shows up, though)
-        }
 
         // API 23 or higher
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -93,50 +76,107 @@ public class MainActivity extends Activity {
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSION_ACCESS_FINE_LOCATION);
             }
+        } else {
+            // API 22 or lower
+            // Acquire reference to the LocationManager
+            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (locationManager == null) {
+                viewAccuracy.setText("No GPS is available");
+                // finish(); <-- to close the app (the app simply disappears)
+                return;
+            }
+            if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
+                try {
+                    locationManager.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER, POLLING_FREQ,
+                            MIN_DISTANCE, locationListener);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
-
-            // Register for GPS location updates
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, POLLING_FREQ,
-                    MIN_DISTANCE, locationListener);
-        }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-    // Unregister location listeners
+        if (locationManager == null)
+            return;
+
+        if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // API 23 or higher
+                if (getApplicationContext().checkSelfPermission(
+                        Manifest.permission.ACCESS_FINE_LOCATION) ==
+                        PackageManager.PERMISSION_GRANTED) {
+                    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    if (locationManager == null) {
+                        viewAccuracy.setText("No GPS is available");
+                        // finish(); <-- to close the app (the app simply disappears)
+                        return;
+                    }
+                    try {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.GPS_PROVIDER, POLLING_FREQ,
+                                MIN_DISTANCE, locationListener);
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else { // API 22 or lower
+                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if (locationManager == null) {
+                    viewAccuracy.setText("No GPS is available");
+                    // finish(); <-- to close the app (the app simply disappears)
+                    return;
+                }
+                try {
+                    locationManager.requestLocationUpdates(
+                            LocationManager.GPS_PROVIDER, POLLING_FREQ,
+                            MIN_DISTANCE, locationListener);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
 
-        if (locationListener != null)
+        // Unregister location listeners
+        if (locationManager != null && locationListener != null)
             locationManager.removeUpdates(locationListener);
-
-    }
-
-
-    // Update display
-    private void updateDisplay(Location location) {
-
-        viewAccuracy.setText("Accuracy: " + location.getAccuracy());
-        viewTime.setText("Time:" + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale
-                .getDefault()).format(new Date(location.getTime())));
-        viewLat.setText("Longitude: " + location.getLongitude());
-        viewLng.setText("Latitude: " + location.getLatitude());
-
     }
 
     @Override
+    @TargetApi(23)
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults) {
-        if (grantResults.length !=0 && requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION
+        if (grantResults.length != 0 && requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG,"GPS Permission granted");
+            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER, POLLING_FREQ,
+                        MIN_DISTANCE, locationListener);
+            }
         } else {
-            Log.d(TAG,"GPS Permission denied");
+            Toast.makeText(MainActivity.this, "GPS unavailable", Toast.LENGTH_SHORT).show();
         }
     }
 
+    // Update display
+    private void updateDisplay(Location location) {
+        viewAccuracy.setText("Accuracy: " + location.getAccuracy());
+        viewTime.setText("Time: " + new SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale
+                .getDefault()).format(new Date(location.getTime())));
+        viewLat.setText("Longitude: " + location.getLongitude());
+        viewLng.setText("Latitude: " + location.getLatitude());
+    }
 
 }
