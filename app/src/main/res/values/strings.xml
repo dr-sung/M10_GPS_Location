@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">M10_GPS_Location</string>
+    <string name="no_intial_reading">No Initial Reading Available</string>
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/accuracy_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="accuracy"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/time_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="time"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/lat_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="lattitude"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/lng_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="longitudue"
+        android:textSize="24sp" />
+
+</LinearLayout>
