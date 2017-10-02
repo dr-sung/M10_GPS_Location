@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
     // Reference to the LocationManager and LocationListener
     private LocationManager locationManager;
     private LocationListener locationListener;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -159,12 +159,14 @@ public class MainActivity extends Activity {
         if (grantResults.length != 0 && requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED) {
+            try {
                 locationManager.requestLocationUpdates(
                         LocationManager.GPS_PROVIDER, POLLING_FREQ,
                         MIN_DISTANCE, locationListener);
+            } catch (SecurityException e) {
+                e.printStackTrace();
             }
+
         } else {
             Toast.makeText(MainActivity.this, "GPS unavailable", Toast.LENGTH_SHORT).show();
         }
