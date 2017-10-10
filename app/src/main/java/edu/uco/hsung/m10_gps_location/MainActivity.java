@@ -76,24 +76,6 @@ public class MainActivity extends Activity {
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSION_ACCESS_FINE_LOCATION);
             }
-        } else {
-            // API 22 or lower
-            // Acquire reference to the LocationManager
-            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (locationManager == null) {
-                viewAccuracy.setText("No GPS is available");
-                // finish(); <-- to close the app (the app simply disappears)
-                return;
-            }
-            if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
-                try {
-                    locationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER, POLLING_FREQ,
-                            MIN_DISTANCE, locationListener);
-                } catch (SecurityException e) {
-                    e.printStackTrace();
-                }
-            }
         }
 
     }
@@ -131,12 +113,14 @@ public class MainActivity extends Activity {
                     // finish(); <-- to close the app (the app simply disappears)
                     return;
                 }
-                try {
-                    locationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER, POLLING_FREQ,
-                            MIN_DISTANCE, locationListener);
-                } catch (SecurityException e) {
-                    e.printStackTrace();
+                if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
+                    try {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.GPS_PROVIDER, POLLING_FREQ,
+                                MIN_DISTANCE, locationListener);
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
